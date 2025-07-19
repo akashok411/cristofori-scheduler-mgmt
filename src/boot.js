@@ -16,7 +16,7 @@ module.exports = async (callback) => {
      // 0 0 * * * everyday
     schedule.scheduleJob('0 0 * * *', async () => {
         console.log("Function-Date:",moment());
-        //main();
+        main();
     });
 
     callback();

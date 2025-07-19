@@ -52,7 +52,7 @@ function encodeText(text) {
     const token = new fernet.Token({
         secret: secret
     })
-    return token.encode(CryptoJS.enc.Utf8.parse(text)) 
+    return token.encode(CryptoJS.enc.Utf8.parse(text))
 };
 function decodeToken(token) {/* 
     const jwtPayload = token.split('.')[1];
@@ -67,32 +67,38 @@ function decodeText(text) {
         ttl: 0,
     });
     token.decode();
-    return token; 
+    return token;
 };
 async function sncConnection(url, req, headers) {
     try {
         const resp = await axios.post(url, req, headers);
         const res = resp.data;
-      //  console.log("intitial",resp);
-        if (res?.status?.code !== 200 || !res?.status?.success || !res?.job_id) {
-            return { error: true, message: res?.status?.msg || "API call failed", data: {}, status: 'error' };
+        
+        if (
+            !res ||
+            !res.status ||
+            res.status.code !== 200 ||
+            !res.status.success ||
+            !res.job_id
+        ) {
+            return { error: true, message: (res && res.status && res.status.msg) || "API call failed", data: {}, status: 'error' };
         }
         const pollingResult = await new Promise((resolve, reject) => {
             const subscription = GlobalService
                 .startPoll(
                     "Get",
                     GlobalService.randomGenerator(),
-                    () => GlobalService.getJobStatus(res?.job_id),
+                    () => GlobalService.getJobStatus(res && res.job_id || null),
                     response => response,
                     GlobalService.POLLING_MESSAGES.GET_DATA
                 )
                 .subscribe(
                     result => {
-                        const data = result?.data || {};
+                        const data = result && result.data ? result.data : {};
                         //console.log("inside",(result));
                         if (data.process_status === "processed") {
                             subscription.unsubscribe(); // Stop polling when processed.
-                            if (data && data?.status?.code === 200) {
+                            if (data && data.status && data.status.code === 200) {
                                 resolve(data.result);
                             } else {
                                 reject(data);
@@ -110,8 +116,11 @@ async function sncConnection(url, req, headers) {
         return { error: false, message: "Successfully fetched data", data: pollingResult, status: 'success' };
 
     } catch (error) {
-        const jobResult = error?.result?.metadata || {};
-        const errorMsg = error?.status?.message || error?.message || "An unexpected error occurred.";
+        const jobResult = error && error.result && error.result.metadata ? error.result.metadata : {};
+        const errorMsg =
+            (error && error.status && error.status.message) ||
+            (error && error.message) ||
+            "An unexpected error occurred.";
         const timeOutErr = error === "TIME_OUT" ? "The request timed out while processing your job. The operation is still pending. Please try again/refresh later to check the status." : errorMsg;
 
         return {

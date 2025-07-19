@@ -7,7 +7,7 @@ const { IDGenerator, decodeBase64Image, encodeText, sncConnection, decodeText, d
 const qs = require('qs');
 const axios = require('axios').default;
 const moment = require('moment');
-axios.defaults.baseURL = process.env.SYNC_URL;
+
 
 async function syncCustomer(companyId, query) {
     try {
@@ -24,6 +24,7 @@ async function syncCustomer(companyId, query) {
             password: encodeText(getCompanyInfo[0].authMetadata.requestPayload.password),
             grant_type: getCompanyInfo[0].authMetadata.requestPayload.grant_type
         });
+        axios.defaults.baseURL = process.env.SYNC_URL;
         const getToken = await axios.post(url, tokenQueryData, { headers: header, }).catch(data => {
             throw new Error(messagesConst.INVALID_CREDS);
         });
@@ -34,7 +35,7 @@ async function syncCustomer(companyId, query) {
             requestMetadata.syncCustomers.headers.Authorization = `Bearer ${getToken.data.access_token}`;
             axios.defaults.headers["Authorization"] = `Bearer ${getToken.data.access_token}`;
             requestMetadata.syncCustomers.requestPayload.company_id = companyInfo ? companyInfo.company_id : '';
-            requestMetadata.syncCustomers.requestPayload.timezone = process.env.TZ;
+            requestMetadata.syncCustomers.requestPayload.timezone = process.env.PG_TZ;
             requestMetadata.syncCustomers.requestPayload.username = companyInfo ? companyInfo.username : '';
             //requestMetadata.syncCustomers.requestPayload.data.is_new = false;//false update true new cusotmers
             const updateCustoemrs = await sncConnection(requestMetadata.syncCustomers.url, requestMetadata.syncCustomers.requestPayload, { headers: requestMetadata.getCustomerOrder.headers, });

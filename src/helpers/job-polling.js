@@ -80,7 +80,7 @@ class GlobalService {
   getJobStatus(id) {
     return axios.get(`/job/${id}`)
       .then((response) => response)
-      .catch((error) => error?.response || error);
+      .catch((error) => (error && error.response) || error);
   }
 
   randomGenerator() {
@@ -94,33 +94,33 @@ class GlobalService {
         let pollingStatus = {};
         pollingStatus["id"] = randomId;
         pollingStatus["header"] = header;
-        pollingStatus["message"] = msgObj?.POLLING || "Please wait while we fetch the data.";
+        pollingStatus["message"] = (msgObj && msgObj.POLLING) || "Please wait while we fetch the data.";
         pollingStatus["status"] = "polling";
         pollingStatus["show"] = false;
         this.pollingEvent.next(pollingStatus);
         return pollFn();
       }),
       first((fValue) => {
-        const value = fValue?.data || "";
+        const value = (fValue && fValue.data) || "";
         var isprocessed = value.process_status === "processed";
         let pollingStatus = {};
         pollingStatus["id"] = randomId;
         pollingStatus["header"] = header;
         if (isprocessed) {
-          if (value?.result?.metadata) {
-            pollingStatus["message"] = "Output is :" + JSON.stringify(value?.status?.message);
+          if (value && value.result && value.result.metadata) {
+            pollingStatus["message"] = "Output is :" + JSON.stringify(value && value.status && value.status.message);
             pollingStatus["status"] = "success";
             pollingStatus["show"] = true;
             this.pollingEvent.next(pollingStatus);
             return stopPollPredicate(isprocessed);
           }
-          pollingStatus["message"] = msgObj?.SUCCESS || "Success";
+          pollingStatus["message"] = (msgObj && msgObj.SUCCESS) || "Success";
           pollingStatus["status"] = "success";
           pollingStatus["show"] = true;
           this.pollingEvent.next(pollingStatus);
           return stopPollPredicate(isprocessed);
         } else {
-          pollingStatus["message"] = msgObj?.POLLING || `Polling in progress...`;
+          pollingStatus["message"] = (msgObj && msgObj.POLLING) || `Polling in progress...`;
           pollingStatus["status"] = "polling";
           pollingStatus["show"] = false;
           this.pollingEvent.next(pollingStatus);
@@ -139,13 +139,14 @@ class GlobalService {
           this.pollingEvent.next(pollingStatus);
           return throwError(() => "TIME_OUT");
         }
-        if (error?.error?.status?.message) {
-          let objkeys = Object.keys(error.error?.status?.message);
+        const errorMsgs = error && error.error && error.error.status && error.error.status.message;
+        if (errorMsgs) {
+          let objkeys = Object.keys(errorMsgs);
           if (objkeys.length > 0) {
             pollingStatus["status"] = "exception";
-            pollingStatus["message"] = JSON.stringify(error?.error?.status?.message);
+            pollingStatus["message"] = JSON.stringify(errorMsgs);
             this.pollingEvent.next(pollingStatus);
-            return throwError(() => error?.error?.status?.message);
+            return throwError(() => errorMsgs);
           }
         }
         pollingStatus["status"] = "exception";

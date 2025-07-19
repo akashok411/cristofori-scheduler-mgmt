@@ -4,12 +4,12 @@ const { datasourceTypes, } = require('../helpers/datasource-helper.js');
 module.exports.definition = [
     {
         type: datasourceTypes.postgre,
-        database: 'service_dlv_mgmt',
+        database: 'dms',
         user: 'postgres',
         name: 'delivery_management_system',
         url: 'localhost',
         port: 5432,
-        password: 'master@22',
+        password: 'India@007',
     },
 ];
 
